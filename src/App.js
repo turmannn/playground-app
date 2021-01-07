@@ -5,13 +5,12 @@ function CurrencyOptions(props) {
   return (
     <div>
       <label htmlFor={props.label.split(' ').join('-')}>{props.label}:</label>
-      <select id={props.id} onChange={props.onChange}>
-        { props.availableOpts.map(opt => <option>{opt}</option>) }
+      <select id={props.id} onChange={props.onChange} value={props.value}>
+        { ['select'].concat(props.availableOpts).map(opt => <option>{opt}</option>) }
       </select>
     </div>
   )
 }
-
 
 function ConversionResult(props) {
   const result = props.result && props.targetCurrency
@@ -35,8 +34,8 @@ class App extends React.Component {
     this.state = {
       errorCurrencies: null,
       errorRates: null,
-      currencySelectedBase: null,
-      currencySelectedTarget: null,
+      currencySelectedBase: 'select',
+      currencySelectedTarget: 'select',
       currencies: null,
       rates: null,
       amount: 0
@@ -54,22 +53,44 @@ class App extends React.Component {
       )
   }
 
-  handleOptionChangeCurTarget(e) {
-    this.setState({currencySelectedTarget: e.target.value})
-  }
-
   handleOptionChangeCurBase(e) {
-    // TODO: consider to keep history of requests to prevent duplicate API calls. But still make a call if date has been changed ass rates are changing on a dily basis
+    // TODO: consider to keep history of requests to prevent duplicate API calls.
+    //  But still make a call if date has been changed ass rates are changing on a daily basis
 
-    const targetCur = e.target.value
-    const currencyRatesEndpoint = `https://api.exchangeratesapi.io/latest?base=${targetCur}`
+    const selectedVal = e.target.value
+    const currencyRatesEndpoint = `https://api.exchangeratesapi.io/latest?base=${selectedVal}`
 
     fetch(currencyRatesEndpoint)
       .then(res => res.json())
       .then(
-        result => this.setState({ rates: result.rates, currencySelectedBase: targetCur }),
+        result => {
+          if (result.rates) {
+            this.setState({
+              rates: result.rates,
+              currencySelectedBase: selectedVal
+            })
+          } else {
+            if (result.error) {
+              if (result.error.includes('not supported')) {
+                alert(`Selected base currency ${selectedVal} is not supported`)
+              } else this.setState({errorRates: result.error.toString()})
+            }
+            this.setState({ currencySelectedBase: 'select' })
+          }
+        },
         error => this.setState({errorRates: error.toString()}) //TODO: handle case when selected currency is not supported
       )
+  }
+
+  handleOptionChangeCurTarget(e) {
+    const selectedVal = e.target.value
+    if (!(selectedVal in this.state.rates)) {
+      alert(
+        'Selected currency is not supported. Supported values: ' +
+        `${Object.keys(this.state.rates)}`
+      )
+      this.setState( {currencySelectedTarget: 'select'})
+    } else this.setState({ currencySelectedTarget: selectedVal })
   }
 
   handleInputChange(e) {
@@ -79,25 +100,35 @@ class App extends React.Component {
   render() {
     let currencyBlock
     if (this.state.errorCurrencies) {
-      currencyBlock =
+      currencyBlock = (
         <div>
           <h3>Error happened: {this.state.error}</h3>
         </div>
+      )
     } else if (this.state.currencies) {
       const options = Object.keys(this.state.currencies).map(currency => currency)
+      const amountFloat = parseFloat(this.state.amount)
 
-      const conversionResult = this.state.rates
-        ? parseFloat(this.state.amount) * this.state.rates[this.state.currencySelectedTarget]
-        : null
+      let conversionResult
+      if (
+        amountFloat && amountFloat > 0 &&
+        this.state.currencySelectedTarget &&
+        this.state.rates
+      ) {
+        const rate = this.state.rates[this.state.currencySelectedTarget]
+        conversionResult = amountFloat * rate
+      } else conversionResult = null
 
-      currencyBlock =
+      currencyBlock = (
         <div>
           <CurrencyOptions
             availableOpts={options} label={'base currency'}
+            value={this.state.currencySelectedBase}
             onChange={this.handleOptionChangeCurBase}
           />
           <CurrencyOptions
             availableOpts={options} label={'target currency'}
+            value={this.state.currencySelectedTarget}
             onChange={this.handleOptionChangeCurTarget}
           />
           <ConversionResult
@@ -105,6 +136,7 @@ class App extends React.Component {
             targetCurrency={this.state.currencySelectedTarget}
           />
         </div>
+      )
     } else {
       // this happens before the data fetched and no errors nor data available
       currencyBlock = null

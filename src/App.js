@@ -22,8 +22,6 @@ function ConversionResult(props) {
   )
 }
 
-
-
 class App extends React.Component {
   constructor (props) {
     super(props);
@@ -142,6 +140,11 @@ class App extends React.Component {
       currencyBlock = null
     }
 
+    let currencyChar
+    if (this.state.currencies && this.state.currencySelectedBase !== 'select') {
+      currencyChar = this.state.currencies[this.state.currencySelectedBase].symbol
+    }
+
     return (
       <div className="App">
         <h1>Currrency Converter</h1>
@@ -151,9 +154,9 @@ class App extends React.Component {
             placeholder='amount'
             onChange={this.handleInputChange}
           />
+          <label>{currencyChar}</label>
+          { currencyBlock }
         </form>
-
-        { currencyBlock }
       </div>
     );
   }

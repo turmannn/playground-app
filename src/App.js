@@ -1,29 +1,28 @@
-import logo from './logo.svg';
 import './App.css';
 import React from 'react'
 
-class CurrencyOptions extends React.Component {
-  render() {
-    return (
-      <div>
-        <label htmlFor={this.props.label.split(' ').join('-')}>{this.props.label}:</label>
-        <select id={this.props.id} onChange={this.props.onChange}>
-          { this.props.availableOpts.map(opt => <option>{opt}</option>) }
-        </select>
-      </div>
-    )
-  }
+function CurrencyOptions(props) {
+  return (
+    <div>
+      <label htmlFor={props.label.split(' ').join('-')}>{props.label}:</label>
+      <select id={props.id} onChange={props.onChange}>
+        { props.availableOpts.map(opt => <option>{opt}</option>) }
+      </select>
+    </div>
+  )
 }
 
-class ConversionResult extends React.Component {
-  render () {
-    const result = this.props.result && this.props.targetCurrency ? `${this.props.result} ${this.props.targetCurrency}` : ''
 
-    return (
-      <h3>conversion result: { result }</h3>
-    )
-  }
+function ConversionResult(props) {
+  const result = props.result && props.targetCurrency
+    ? `${props.result} ${props.targetCurrency}`
+    : ''
+
+  return (
+    <h3>conversion result: { result }</h3>
+  )
 }
+
 
 
 class App extends React.Component {
@@ -56,13 +55,12 @@ class App extends React.Component {
   }
 
   handleOptionChangeCurTarget(e) {
-    console.log('Target selected')
     this.setState({currencySelectedTarget: e.target.value})
   }
 
   handleOptionChangeCurBase(e) {
     // TODO: consider to keep history of requests to prevent duplicate API calls. But still make a call if date has been changed ass rates are changing on a dily basis
-    console.log('Base selected')
+
     const targetCur = e.target.value
     const currencyRatesEndpoint = `https://api.exchangeratesapi.io/latest?base=${targetCur}`
 
@@ -80,7 +78,6 @@ class App extends React.Component {
 
   render() {
     let currencyBlock
-
     if (this.state.errorCurrencies) {
       currencyBlock =
         <div>

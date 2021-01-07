@@ -3,21 +3,10 @@ import './App.css';
 import React from 'react'
 
 class CurrencyOptions extends React.Component {
-  constructor (props) {
-    super(props);
-
-    this.state = {
-      error: null,
-      currencySelectedBase: null,
-      currencySelectedTarget: null,
-      currencyData: {}
-    }
-  }
-
   render() {
     return (
       <div>
-        <label htmlFor={this.props.label.split().join('-')}>{this.props.label}:</label>
+        <label htmlFor={this.props.label.split(' ').join('-')}>{this.props.label}:</label>
         <select id={this.props.id} onChange={this.props.onChange}>
           { this.props.availableOpts.map(opt => <option>{opt}</option>) }
         </select>
@@ -28,8 +17,10 @@ class CurrencyOptions extends React.Component {
 
 class ConversionResult extends React.Component {
   render () {
+    const result = this.props.result && this.props.targetCurrency ? `${this.props.result} ${this.props.targetCurrency}` : ''
+
     return (
-      <h1>conversion result: { this.props.conversionResult }</h1>
+      <h3>conversion result: { result }</h3>
     )
   }
 }
@@ -38,8 +29,8 @@ class ConversionResult extends React.Component {
 class App extends React.Component {
   constructor (props) {
     super(props);
-    this.handleOptionChange = this.handleOptionChangeCurBase.bind(this)
-    this.handleOptionChange = this.handleOptionChangeCurTarget.bind(this)
+    this.handleOptionChangeCurBase = this.handleOptionChangeCurBase.bind(this)
+    this.handleOptionChangeCurTarget = this.handleOptionChangeCurTarget.bind(this)
     this.handleInputChange = this.handleInputChange.bind(this)
 
     this.state = {
@@ -62,30 +53,25 @@ class App extends React.Component {
         result => this.setState({ currencies: result }),
         error => this.setState({errorCurrencies: error.toString()})
       )
-
-    if (this.state.currencySelectedTarget) {
-      // currency is not selected after the first rendering happens
-      // TODO: consider to keep history of requests to prevent duplicate API calls. But still make a call if date has been changed ass rates are changing on a dily basis
-
-      const currencyRatesEndpoint = `https://api.exchangeratesapi.io/latest?base=${this.state.currencySelectedTarget}`
-
-      fetch(currencyRatesEndpoint)
-        .then(res => res.json())
-        .then(
-          result => this.setState({ rates: result }),
-          error => this.setState({errorRates: error.toString()})
-        )
-    }
-  }
-
-
-
-  handleOptionChangeCurBase(e) {
-    this.setState({currencySelectedBase: e.target.value})
   }
 
   handleOptionChangeCurTarget(e) {
+    console.log('Target selected')
     this.setState({currencySelectedTarget: e.target.value})
+  }
+
+  handleOptionChangeCurBase(e) {
+    // TODO: consider to keep history of requests to prevent duplicate API calls. But still make a call if date has been changed ass rates are changing on a dily basis
+    console.log('Base selected')
+    const targetCur = e.target.value
+    const currencyRatesEndpoint = `https://api.exchangeratesapi.io/latest?base=${targetCur}`
+
+    fetch(currencyRatesEndpoint)
+      .then(res => res.json())
+      .then(
+        result => this.setState({ rates: result.rates, currencySelectedBase: targetCur }),
+        error => this.setState({errorRates: error.toString()}) //TODO: handle case when selected currency is not supported
+      )
   }
 
   handleInputChange(e) {
@@ -93,33 +79,49 @@ class App extends React.Component {
   }
 
   render() {
-    console.log('sel cur: ', this.state.currencySelected)
     let currencyBlock
-    if (this.state.error) {
+
+    if (this.state.errorCurrencies) {
       currencyBlock =
         <div>
           <h3>Error happened: {this.state.error}</h3>
         </div>
-    } else if (this.state.currencyData) {
-      const options = Object.keys(this.state.currencyData).map(currency => currency)
-      const conversionResult = this.state.amount * this.state.rates.rates[this.state.currencySelectedTarget]
+    } else if (this.state.currencies) {
+      const options = Object.keys(this.state.currencies).map(currency => currency)
+
+      const conversionResult = this.state.rates
+        ? parseFloat(this.state.amount) * this.state.rates[this.state.currencySelectedTarget]
+        : null
 
       currencyBlock =
         <div>
-          <CurrencyOptions availableOpts={options} label={'base currency'} onChange={this.handleOptionChangeCurBase} />
-          <CurrencyOptions availableOpts={options} label={'target currency'} onChange={this.handleOptionChangeCurTarget} />
-          <ConversionResult selectedCur={conversionResult}/>
+          <CurrencyOptions
+            availableOpts={options} label={'base currency'}
+            onChange={this.handleOptionChangeCurBase}
+          />
+          <CurrencyOptions
+            availableOpts={options} label={'target currency'}
+            onChange={this.handleOptionChangeCurTarget}
+          />
+          <ConversionResult
+            result={conversionResult}
+            targetCurrency={this.state.currencySelectedTarget}
+          />
         </div>
     } else {
       // this happens before the data fetched and no errors nor data available
-      return null
+      currencyBlock = null
     }
 
     return (
       <div className="App">
-        <h3>Hello World</h3>
+        <h1>Currrency Converter</h1>
         <form>
-          <input type='text' placeholder='amount' onChange={this.handleInputChange} />
+          <input
+            type='text'
+            placeholder='amount'
+            onChange={this.handleInputChange}
+          />
         </form>
 
         { currencyBlock }

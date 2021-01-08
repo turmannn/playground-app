@@ -92,7 +92,12 @@ class App extends React.Component {
   }
 
   handleInputChange(e) {
-    this.setState( {amount: e.target.value} )
+    const reNumbers = /^[0-9]+$/
+    console.log(reNumbers.test(e.target.value))
+    if (e.target.value === ''  || reNumbers.test(e.target.value)) {
+      this.setState( {amount: e.target.value} )
+    }
+
   }
 
   render() {
@@ -152,6 +157,7 @@ class App extends React.Component {
           <input
             type='text'
             placeholder='amount'
+            value = {this.state.amount ? this.state.amount : ''}
             onChange={this.handleInputChange}
           />
           <label>{currencyChar}</label>

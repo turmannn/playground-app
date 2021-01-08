@@ -1,3 +1,8 @@
+# Currency converter application
+![some text](images/app_look.png)
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

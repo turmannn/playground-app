@@ -1,7 +1,13 @@
 import './App.css';
 import React from 'react'
 
+import PropTypes from 'prop-types'  // Runtime type checking for React props and similar objects.
+import { connect } from 'react-redux'
+
+import { fetchCurrencies } from './actions/currenciesAction'
+
 function CurrencyOptions(props) {
+  console.log('CurrencyOptions')
   return (
     <div>
       <label htmlFor={props.label.split(' ').join('-')}>{props.label}:</label>
@@ -30,25 +36,18 @@ class App extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this)
 
     this.state = {
-      errorCurrencies: null,
+      // errorCurrencies: null,
       errorRates: null,
       currencySelectedBase: 'select',
       currencySelectedTarget: 'select',
-      currencies: null,
+      // currencies: null,
       rates: null,
       amount: 0
     }
-
   }
 
   componentDidMount() {
-    const currenciesEndpoint = 'https://gist.githubusercontent.com/mddenton/062fa4caf150bdf845994fc7a3533f74/raw/27beff3509eff0d2690e593336179d4ccda530c2/Common-Currency.json'
-    fetch(currenciesEndpoint)
-      .then(res => res.json())
-      .then(
-        result => this.setState({ currencies: result }),
-        error => this.setState({errorCurrencies: error.toString()})
-      )
+    this.props.fetchCurrencies();
   }
 
   handleOptionChangeCurBase(e) {
@@ -102,14 +101,16 @@ class App extends React.Component {
 
   render() {
     let currencyBlock
-    if (this.state.errorCurrencies) {
+    // if (this.state.errorCurrencies) {
+    if (this.props.currenciesFetchError) {
       currencyBlock = (
         <div>
           <h3>Error happened: {this.state.error}</h3>
         </div>
       )
-    } else if (this.state.currencies) {
-      const options = Object.keys(this.state.currencies).map(currency => currency)
+    // } else if (this.state.currencies) {
+    } else if (this.props.currencies) {
+      const options = Object.keys(this.props.currencies).map(currency => currency)
       const amountFloat = parseFloat(this.state.amount)
 
       let conversionResult
@@ -168,4 +169,14 @@ class App extends React.Component {
   }
 }
 
-export default App;
+App.propTypes = {
+  fetchCurrencies: PropTypes.func.isRequired,
+
+}
+
+const mapStateToProps = state => ({
+  currencies: state.currencies.items,
+  currenciesFetchError: state.currencies.error
+});
+
+export default connect(mapStateToProps, { fetchCurrencies })(App)

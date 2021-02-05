@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`conversionResult renders conversion result 1`] = `
+Array [
+  <h3>
+    conversion result: 
+    100 $
+  </h3>,
+]
+`;
+
+exports[`conversionResult renders no result 1`] = `
+Array [
+  <h3>
+    conversion result: 
+    
+  </h3>,
+]
+`;
+
+exports[`conversionResult renders no result 2`] = `
+Array [
+  <h3>
+    conversion result: 
+    
+  </h3>,
+]
+`;
+
+exports[`conversionResult renders no result 3`] = `
+Array [
+  <h3>
+    conversion result: 
+    
+  </h3>,
+]
+`;
